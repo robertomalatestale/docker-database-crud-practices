@@ -1,4 +1,4 @@
-package builderpratice;
+package builderpractice;
 
 public class Person {
     private String firstName;

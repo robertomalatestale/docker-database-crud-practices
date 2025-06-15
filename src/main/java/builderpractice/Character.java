@@ -1,4 +1,4 @@
-package builderpratice;
+package builderpractice;
 
 public class Character {
     String name;
@@ -40,6 +40,18 @@ public class Character {
             character.age = this.age;
             return character;
         }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getTvShow() {
+        return tvShow;
+    }
+
+    public int getAge() {
+        return age;
     }
 
     @Override

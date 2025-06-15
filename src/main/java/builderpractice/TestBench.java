@@ -1,4 +1,4 @@
-package builderpratice;
+package builderpractice;
 
 public class TestBench {
     public static void main(String[] args) {
@@ -17,6 +17,9 @@ public class TestBench {
                 .age(55)
                 .build();
         System.out.println(character);
-
+        ReportDTO.ReportDTOBuilder.builder()
+                .characterTvShow(character.getTvShow())
+                .personEmail(person.getEmail())
+                .build();
     }
 }
