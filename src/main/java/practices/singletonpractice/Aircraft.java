@@ -1,4 +1,4 @@
-package singletonpractice;
+package practices.singletonpractice;
 
 import java.util.HashSet;
 import java.util.Set;

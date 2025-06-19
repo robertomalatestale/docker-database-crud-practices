@@ -1,4 +1,4 @@
-package builderpractice;
+package practices.builderpractice;
 
 public class Character {
     String name;

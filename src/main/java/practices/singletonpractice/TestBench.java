@@ -1,4 +1,4 @@
-package singletonpractice;
+package practices.singletonpractice;
 
 //Singleton is a project pattern to make a class have one unique instance
 public class TestBench {
