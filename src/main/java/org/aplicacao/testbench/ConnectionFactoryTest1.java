@@ -16,7 +16,9 @@ public class ConnectionFactoryTest1 {
         //ProducerService.delete(1);
         //ProducerService.update(producerToUpdate);
         //log.info("All producers: '{}'",ProducerService.findAll());
-        log.info("Producers found: '{}'",ProducerService.findByName("Studio"));
+        //log.info("Producers found: '{}'",ProducerService.findByName("Studio"));
+        ProducerService.showProducerMetaData();
+        ProducerService.showDriverMetaData();
 
     }
 }
