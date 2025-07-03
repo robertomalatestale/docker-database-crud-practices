@@ -45,6 +45,25 @@ public class ProducerRepository {
         }
     }
 
+    public static void updatePreparedStatement(Producer producer){
+        String sql = "UPDATE `anime_store`.`producer` SET `name` = '%s' WHERE (`id` = '%d');";
+        try(Connection connection = ConnectionFactory.getConnection();
+            PreparedStatement preparedStatement = preparedStatementUpdate(connection, producer)){
+            int rowsAffected = preparedStatement.executeUpdate();
+            log.info("Updated producer '{}' - '{}' - rows affected '{}'", producer.getName(),producer.getId(), rowsAffected);
+        }catch(SQLException e){
+            log.error("Error while trying to update producer '{}'",producer.getId(), e);
+        }
+    }
+
+    private static PreparedStatement preparedStatementUpdate(Connection connection, Producer producer) throws SQLException {
+        String sql = "UPDATE `anime_store`.`producer` SET `name` = ? WHERE (`id` = ?);";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1,producer.getName());
+        preparedStatement.setInt(2,producer.getId());
+        return preparedStatement;
+    }
+
     public static List<Producer> findAll(){
         log.info("Finding all producers");
         return findByName("");
@@ -67,6 +86,30 @@ public class ProducerRepository {
             log.error("Error while trying to find all producers", e);
         }
         return producers;
+    }
+
+    public static List<Producer> findByNamePreparedStatement(String name){
+        log.info("Finding producers...");
+        String sql = "SELECT * FROM producer WHERE name LIKE ?;";
+        List<Producer> producers = new ArrayList<>();
+        try(Connection connection = ConnectionFactory.getConnection();
+            PreparedStatement preparedStatement = preparedStatementFindByName(connection, name);
+            ResultSet rs = preparedStatement.executeQuery()) {
+            while(rs.next()){
+                Producer producer = Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build();
+                producers.add(producer);
+            }
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+        return producers;
+    }
+
+    private static PreparedStatement preparedStatementFindByName(Connection connection, String name) throws SQLException {
+        String sql = "SELECT * FROM producer WHERE name LIKE ?;";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1,String.format("%%%s%%",name));
+        return preparedStatement;
     }
 
     public static void showProducerMetaData(){
@@ -115,5 +158,103 @@ public class ProducerRepository {
         }
     }
 
+    public static void showTypeScrollWorking(){
+        log.info("Finding producers...");
+        String sql = "SELECT * FROM producer;";
+        try(Connection connection = ConnectionFactory.getConnection();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = statement.executeQuery(sql)){
+            log.info("Last row? '{}'",rs.last());
+            log.info("Row number '{}'",rs.getRow());
+            log.info(Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build());
 
+            log.info("First row? '{}'",rs.first());
+            log.info("Row number '{}'",rs.getRow());
+            log.info(Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build());
+
+            log.info("Row absolute? '{}'",rs.absolute(2));
+            log.info("Row number '{}'",rs.getRow());
+            log.info(Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build());
+
+            log.info("Row relative? '{}'",rs.relative(-1));
+            log.info("Row number '{}'",rs.getRow());
+            log.info(Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build());
+
+            log.info("Is last? '{}'",rs.isLast());
+            log.info("Row number '{}'",rs.getRow());
+
+            log.info("Is first? '{}'",rs.isFirst());
+            log.info("Row number '{}'",rs.getRow());
+
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+    }
+
+    public static List<Producer> findByNameAndUpdateToUppercase(String name){
+        log.info("Finding producers...");
+        String sql = "SELECT * FROM producer WHERE name LIKE '%%%s%%';"
+                .formatted(name);
+        List<Producer> producers = new ArrayList<>();
+        try(Connection connection = ConnectionFactory.getConnection();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = statement.executeQuery(sql)){
+            while(rs.next()){
+                rs.updateString("name", rs.getString("name").toUpperCase());
+                rs.updateRow();
+                Producer producer = Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build();
+                producers.add(producer);
+            }
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+        return producers;
+    }
+
+    public static List<Producer> findByNameAndInsertWhenNotFound(String name){
+        log.info("Finding producers...");
+        String sql = "SELECT * FROM producer WHERE name LIKE '%%%s%%';"
+                .formatted(name);
+        List<Producer> producers = new ArrayList<>();
+        try(Connection connection = ConnectionFactory.getConnection();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = statement.executeQuery(sql)){
+            if(rs.next()) return producers;
+            insertNewProducer(name, rs);
+            producers.add(getProducer(rs));
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+        return producers;
+    }
+
+    public static void findByNameAndDelete(String name){
+        log.info("Finding producers...");
+        String sql = "SELECT * FROM producer WHERE name LIKE '%%%s%%';"
+                .formatted(name);
+        List<Producer> producers = new ArrayList<>();
+        try(Connection connection = ConnectionFactory.getConnection();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = statement.executeQuery(sql)){
+            while(rs.next()){
+                log.info("Deleting '{}'", rs.getString("name"));
+                rs.deleteRow();
+            }
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+    }
+
+    private static void insertNewProducer(String name, ResultSet rs) throws SQLException {
+        rs.moveToInsertRow();
+        rs.updateString("name", name);
+        rs.insertRow();
+    }
+
+    private static Producer getProducer(ResultSet rs) throws SQLException {
+        rs.beforeFirst();
+        rs.next();
+        Producer producer = Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build();
+        return producer;
+    }
 }

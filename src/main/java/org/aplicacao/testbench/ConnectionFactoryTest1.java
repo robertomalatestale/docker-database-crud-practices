@@ -6,6 +6,8 @@ import org.aplicacao.jdbcconnection.ConnectionFactory;
 import org.aplicacao.repository.ProducerRepository;
 import org.aplicacao.services.ProducerService;
 
+import java.util.List;
+
 @Log4j2
 public class ConnectionFactoryTest1 {
     public static void main(String[] args) {
@@ -17,8 +19,15 @@ public class ConnectionFactoryTest1 {
         //ProducerService.update(producerToUpdate);
         //log.info("All producers: '{}'",ProducerService.findAll());
         //log.info("Producers found: '{}'",ProducerService.findByName("Studio"));
-        ProducerService.showProducerMetaData();
-        ProducerService.showDriverMetaData();
+        //ProducerService.showProducerMetaData();
+        //ProducerService.showDriverMetaData();
+        //ProducerService.showTypeScrollWorking();
+        //List<Producer> producers = ProducerService.findByNameAndUpdateToUppercase("Deen");
+        //List<Producer> producers = ProducerService.findByNameAndInsertWhenNotFound("Bones");
+        //log.info(producers);
+        List<Producer> producers = ProducerService.findByNamePreparedStatement("H");
+        log.info(producers);
+
 
     }
 }
