@@ -90,7 +90,6 @@ public class ProducerRepository {
 
     public static List<Producer> findByNamePreparedStatement(String name){
         log.info("Finding producers...");
-        String sql = "SELECT * FROM producer WHERE name LIKE ?;";
         List<Producer> producers = new ArrayList<>();
         try(Connection connection = ConnectionFactory.getConnection();
             PreparedStatement preparedStatement = preparedStatementFindByName(connection, name);
@@ -110,6 +109,29 @@ public class ProducerRepository {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1,String.format("%%%s%%",name));
         return preparedStatement;
+    }
+
+    public static List<Producer> findByNameCallableStatement(String name){
+        log.info("Finding producers...");
+        List<Producer> producers = new ArrayList<>();
+        try(Connection connection = ConnectionFactory.getConnection();
+            CallableStatement callableStatement = callableStatementFindByName(connection, name);
+            ResultSet rs = callableStatement.executeQuery()) {
+            while(rs.next()){
+                Producer producer = Producer.builder().id(rs.getInt("id")).name(rs.getString("name")).build();
+                producers.add(producer);
+            }
+        }catch(SQLException e){
+            log.error("Error while trying to find all producers", e);
+        }
+        return producers;
+    }
+
+    private static CallableStatement callableStatementFindByName(Connection connection, String name) throws SQLException {
+        String sql = "CALL `anime_store`.`sp_get_producer_by_name`(?);";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+        callableStatement.setString(1,String.format("%%%s%%",name));
+        return callableStatement;
     }
 
     public static void showProducerMetaData(){
