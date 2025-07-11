@@ -12,7 +12,7 @@ import java.util.List;
 public class ProducerRepository {
 
     public static void save(Producer producer){
-        String sql = "INSERT INTO `anime_store`.`producer` (`name`) VALUES ('%s');".formatted(producer.getName());
+            String sql = "INSERT INTO `anime_store`.`producer` (`name`) VALUES ('%s');".formatted(producer.getName());
         try(Connection connection = ConnectionFactory.getConnection();
             Statement statement = connection.createStatement()){
             int rowsAffected = statement.executeUpdate(sql);
@@ -20,6 +20,37 @@ public class ProducerRepository {
         }catch(SQLException e){
             log.error("Error while trying to insert producer '{}'",producer.getName(), e);
         }
+    }
+
+    public static void saveTransaction(List<Producer> producers){
+        String sql = "UPDATE `anime_store`.`producer` SET `name` = '%s' WHERE (`id` = '%d');";
+        try(Connection connection = ConnectionFactory.getConnection()){
+            connection.setAutoCommit(false);
+            preparedStatementsaveTransaction(connection, producers);
+            connection.commit();
+            connection.setAutoCommit(true);
+        }catch(SQLException e){
+            log.error("Error while trying to save producers '{}'", producers, e);
+        }
+    }
+
+    public static void preparedStatementsaveTransaction(Connection connection, List<Producer> producers) throws SQLException {
+        String sql = "INSERT INTO `anime_store`.`producer` (`name`) VALUES ( ? );";
+        boolean shouldRollback = false;
+        for(Producer p: producers){
+            try( PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+                log.info("Saving producer '{}'",p.getName());
+                preparedStatement.setString(1,p.getName());
+                preparedStatement.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                shouldRollback = true;
+            }
+        }
+        if(shouldRollback) {
+            log.warn("Transaction is being rollback");
+            connection.rollback();}
+
     }
 
     public static void delete(int id){
@@ -56,7 +87,7 @@ public class ProducerRepository {
         }
     }
 
-    private static PreparedStatement preparedStatementUpdate(Connection connection, Producer producer) throws SQLException {
+    public static PreparedStatement preparedStatementUpdate(Connection connection, Producer producer) throws SQLException {
         String sql = "UPDATE `anime_store`.`producer` SET `name` = ? WHERE (`id` = ?);";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1,producer.getName());
@@ -104,7 +135,7 @@ public class ProducerRepository {
         return producers;
     }
 
-    private static PreparedStatement preparedStatementFindByName(Connection connection, String name) throws SQLException {
+    public static PreparedStatement preparedStatementFindByName(Connection connection, String name) throws SQLException {
         String sql = "SELECT * FROM producer WHERE name LIKE ?;";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1,String.format("%%%s%%",name));
@@ -127,7 +158,7 @@ public class ProducerRepository {
         return producers;
     }
 
-    private static CallableStatement callableStatementFindByName(Connection connection, String name) throws SQLException {
+    public static CallableStatement callableStatementFindByName(Connection connection, String name) throws SQLException {
         String sql = "CALL `anime_store`.`sp_get_producer_by_name`(?);";
         CallableStatement callableStatement = connection.prepareCall(sql);
         callableStatement.setString(1,String.format("%%%s%%",name));
